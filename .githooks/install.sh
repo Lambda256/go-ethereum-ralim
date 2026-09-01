@@ -44,6 +44,10 @@ git config --local remote.pushDefault origin
 git config --local checkout.defaultRemote origin
 git config --local init.defaultBranch ralim
 
+#    Point origin/HEAD at whatever GitHub reports as the default branch, so
+#    `git checkout origin/HEAD` and bare `git log origin` follow ralim.
+git remote set-head origin -a >/dev/null 2>&1 || true
+
 # 5. Feature branches cut from ralim should rebase, not merge, on pull - the
 #    patch branch is force-pushed after every upstream rebase.
 git config --local pull.rebase true

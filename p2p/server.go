@@ -90,6 +90,8 @@ type Server struct {
 	peerFeed     event.Feed
 	log          log.Logger
 
+	bandwidth *bandwidthLimiter // Bandwidth limiter shared by all peer connections, nil if disabled
+
 	nodedb    *enode.DB
 	localnode *enode.LocalNode
 	discv4    *discover.UDPv4
@@ -385,6 +387,10 @@ func (srv *Server) Start() (err error) {
 	}
 	if srv.listenFunc == nil {
 		srv.listenFunc = net.Listen
+	}
+	srv.bandwidth = newBandwidthLimiter(srv.MaxIngressRate, srv.MaxEgressRate)
+	if srv.bandwidth != nil {
+		srv.log.Info("Enabled P2P bandwidth limits", "ingress", rateString(srv.MaxIngressRate), "egress", rateString(srv.MaxEgressRate))
 	}
 	srv.quit = make(chan struct{})
 	srv.delpeer = make(chan peerDrop)
@@ -872,6 +878,8 @@ func (srv *Server) checkInboundConn(remoteIP netip.Addr) error {
 // as a peer. It returns when the connection has been added as a peer
 // or the handshakes have failed.
 func (srv *Server) SetupConn(fd net.Conn, flags connFlag, dialDest *enode.Node) error {
+	fd = srv.bandwidth.wrap(fd)
+
 	c := &conn{fd: fd, flags: flags, cont: make(chan error)}
 	defer func() {
 		if c.is(inboundConn) && c.node != nil {

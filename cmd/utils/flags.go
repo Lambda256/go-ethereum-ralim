@@ -905,6 +905,18 @@ var (
 		Value:    node.DefaultConfig.P2P.MaxPendingPeers,
 		Category: flags.NetworkingCategory,
 	}
+	MaxIngressRateFlag = &cli.Float64Flag{
+		Name:     "bandwidth.download",
+		Usage:    "Maximum inbound peer-to-peer bandwidth in MB/s, shared by all peers (0 = unlimited)",
+		Value:    0,
+		Category: flags.NetworkingCategory,
+	}
+	MaxEgressRateFlag = &cli.Float64Flag{
+		Name:     "bandwidth.upload",
+		Usage:    "Maximum outbound peer-to-peer bandwidth in MB/s, shared by all peers (0 = unlimited)",
+		Value:    0,
+		Category: flags.NetworkingCategory,
+	}
 	ListenPortFlag = &cli.IntFlag{
 		Name:     "port",
 		Usage:    "Network listening port",
@@ -1475,6 +1487,41 @@ func MakeDatabaseHandles(max int) int {
 	return int(raised / 2) // Leave half for networking and other stuff
 }
 
+// minBandwidthLimit is the lowest bandwidth limit that can be configured. Below
+// this rate even the devp2p handshakes start running into their deadlines, so
+// the node would simply fail to keep any peers around.
+const minBandwidthLimit = 64 * 1024 // 64KB/s
+
+// setBandwidthLimits retrieves the peer-to-peer bandwidth limits from the CLI
+// flags and converts them into the byte rates used by the p2p server.
+func setBandwidthLimits(ctx *cli.Context, cfg *p2p.Config) {
+	for _, item := range []struct {
+		flag  *cli.Float64Flag
+		limit *int64
+	}{
+		{MaxIngressRateFlag, &cfg.MaxIngressRate},
+		{MaxEgressRateFlag, &cfg.MaxEgressRate},
+	} {
+		if !ctx.IsSet(item.flag.Name) {
+			continue
+		}
+		megabytes := ctx.Float64(item.flag.Name)
+		switch {
+		case megabytes < 0:
+			Fatalf("--%s must not be negative", item.flag.Name)
+		case megabytes == 0:
+			*item.limit = 0 // Explicitly unlimited
+			continue
+		}
+		bytesPerSec := int64(megabytes * 1024 * 1024)
+		if bytesPerSec < minBandwidthLimit {
+			log.Warn("Sanitizing bandwidth limit", "flag", item.flag.Name, "provided", common.StorageSize(bytesPerSec), "updated", common.StorageSize(minBandwidthLimit))
+			bytesPerSec = minBandwidthLimit
+		}
+		*item.limit = bytesPerSec
+	}
+}
+
 // setEtherbase retrieves the etherbase from the directly specified command line flags.
 func setEtherbase(ctx *cli.Context, cfg *ethconfig.Config) {
 	if !ctx.IsSet(MinerPendingFeeRecipientFlag.Name) {
@@ -1493,6 +1540,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	setListenAddress(ctx, cfg)
 	setBootstrapNodes(ctx, cfg)
 	setBootstrapNodesV5(ctx, cfg)
+	setBandwidthLimits(ctx, cfg)
 
 	if ctx.IsSet(MaxPeersFlag.Name) {
 		cfg.MaxPeers = ctx.Int(MaxPeersFlag.Name)

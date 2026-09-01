@@ -18,8 +18,10 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	type Config struct {
 		PrivateKey       *ecdsa.PrivateKey `toml:"-"`
 		MaxPeers         int
-		MaxPendingPeers  int `toml:",omitempty"`
-		DialRatio        int `toml:",omitempty"`
+		MaxPendingPeers  int   `toml:",omitempty"`
+		MaxIngressRate   int64 `toml:",omitempty"`
+		MaxEgressRate    int64 `toml:",omitempty"`
+		DialRatio        int   `toml:",omitempty"`
 		NoDiscovery      bool
 		DiscoveryV4      bool   `toml:",omitempty"`
 		DiscoveryV5      bool   `toml:",omitempty"`
@@ -43,6 +45,8 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.PrivateKey = c.PrivateKey
 	enc.MaxPeers = c.MaxPeers
 	enc.MaxPendingPeers = c.MaxPendingPeers
+	enc.MaxIngressRate = c.MaxIngressRate
+	enc.MaxEgressRate = c.MaxEgressRate
 	enc.DialRatio = c.DialRatio
 	enc.NoDiscovery = c.NoDiscovery
 	enc.DiscoveryV4 = c.DiscoveryV4
@@ -70,8 +74,10 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	type Config struct {
 		PrivateKey       *ecdsa.PrivateKey `toml:"-"`
 		MaxPeers         *int
-		MaxPendingPeers  *int `toml:",omitempty"`
-		DialRatio        *int `toml:",omitempty"`
+		MaxPendingPeers  *int   `toml:",omitempty"`
+		MaxIngressRate   *int64 `toml:",omitempty"`
+		MaxEgressRate    *int64 `toml:",omitempty"`
+		DialRatio        *int   `toml:",omitempty"`
 		NoDiscovery      *bool
 		DiscoveryV4      *bool   `toml:",omitempty"`
 		DiscoveryV5      *bool   `toml:",omitempty"`
@@ -103,6 +109,12 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.MaxPendingPeers != nil {
 		c.MaxPendingPeers = *dec.MaxPendingPeers
+	}
+	if dec.MaxIngressRate != nil {
+		c.MaxIngressRate = *dec.MaxIngressRate
+	}
+	if dec.MaxEgressRate != nil {
+		c.MaxEgressRate = *dec.MaxEgressRate
 	}
 	if dec.DialRatio != nil {
 		c.DialRatio = *dec.DialRatio

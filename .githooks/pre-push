@@ -1,0 +1,26 @@
+#!/bin/sh
+# Block any push to the upstream ethereum/go-ethereum repository.
+# This fork (Lambda256/go-ethereum-ralim) must never send code or PR branches upstream.
+#
+# Enable with:  git config core.hooksPath .githooks
+
+remote_name="$1"
+remote_url="$2"
+
+case "$remote_url" in
+	*github.com[:/]ethereum/go-ethereum*)
+		cat >&2 <<-MSG
+
+		  ✖ Push blocked: '$remote_name' points at ethereum/go-ethereum (upstream).
+
+		    This is a private fork; nothing may be pushed to the upstream project.
+		    Push to 'origin' (Lambda256/go-ethereum-ralim) instead:
+
+		        git push origin HEAD
+
+		MSG
+		exit 1
+		;;
+esac
+
+exit 0

@@ -43,6 +43,16 @@ type Config struct {
 	// Zero defaults to preset values.
 	MaxPendingPeers int `toml:",omitempty"`
 
+	// MaxIngressRate is the maximum number of bytes per second read from all peer
+	// connections combined. Zero or negative means no limit. Lowering it caps the
+	// bandwidth consumed by chain synchronisation and gossip, at the cost of a
+	// slower sync.
+	MaxIngressRate int64 `toml:",omitempty"`
+
+	// MaxEgressRate is the maximum number of bytes per second written to all peer
+	// connections combined. Zero or negative means no limit.
+	MaxEgressRate int64 `toml:",omitempty"`
+
 	// DialRatio controls the ratio of inbound to dialed connections.
 	// Example: a DialRatio of 2 allows 1/2 of connections to be dialed.
 	// Setting DialRatio to zero defaults it to 3.

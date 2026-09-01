@@ -109,6 +109,8 @@ var (
 		utils.ListenPortFlag,
 		utils.DiscoveryPortFlag,
 		utils.MaxPeersFlag,
+		utils.MaxIngressRateFlag,
+		utils.MaxEgressRateFlag,
 		utils.MaxPendingPeersFlag,
 		utils.MinerGasLimitFlag,
 		utils.MinerGasPriceFlag,

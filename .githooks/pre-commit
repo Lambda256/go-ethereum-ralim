@@ -1,0 +1,27 @@
+#!/bin/sh
+# Keep 'master' a pristine mirror of ethereum/go-ethereum.
+#
+# All local work belongs on 'ralim' (the patch branch) or on a feature branch
+# cut from it. master only ever moves by `git merge --ff-only upstream/<tag>`,
+# which does not run this hook.
+
+branch=$(git symbolic-ref --short -q HEAD) || exit 0
+
+if [ "$branch" = "master" ]; then
+	cat >&2 <<-MSG
+
+	  ✖ Commit blocked: 'master' is a read-only mirror of upstream go-ethereum.
+
+	    Move your work onto the patch branch instead:
+
+	        git stash
+	        git checkout ralim
+	        git stash pop
+
+	    master is only advanced with:  git merge --ff-only upstream/<tag>
+
+	MSG
+	exit 1
+fi
+
+exit 0
